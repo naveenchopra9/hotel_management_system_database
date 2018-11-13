@@ -3,63 +3,162 @@ drop database hotel;
 create database hotel;
 use hotel;
 
+-- CREATE TABLE city
+
+-- (zip                CHAR(5)     PRIMARY KEY,
+
+--  name               CHAR(30)    NOT NULL,
+
+--  state              CHAR(2)    NOT NULL);
+
 CREATE TABLE city
+(
+	zip       CHAR(5)  PRIMARY KEY,
+	name      CHAR(30) NOT NULL,
+	state     CHAR(2)  NOT NULL,
+	CONSTRAINT zip_cons CHECK ( SUBSTR(zip,1,1) BETWEEN '0' AND '9' AND
+                  											   SUBSTR(zip,2,1) BETWEEN '0' AND '9' AND
+											                   SUBSTR(zip,3,1) BETWEEN '0' AND '9' AND
+											                   SUBSTR(zip,4,1) BETWEEN '0' AND '9' AND
+											                   SUBSTR(zip,5,1) BETWEEN '0' AND '9' )
+	);
 
-(zip                CHAR(5)     PRIMARY KEY,
+-- CREATE TABLE customer
 
- name               CHAR(30)    NOT NULL,
+-- (cno                FIXED(4)    PRIMARY KEY,
 
- state              CHAR(2)    NOT NULL);
+--  title              CHAR(7),
 
-CREATE TABLE customer
+--  firstname          CHAR(20),
 
-(cno                FIXED(4)    PRIMARY KEY,
+--  name               CHAR(40)    NOT NULL,
 
- title              CHAR(7),
+--  zip                CHAR(5),
 
- firstname          CHAR(20),
+--  address            CHAR(40)    NOT NULL);
 
- name               CHAR(40)    NOT NULL,
+CREATE TABLE customer(
+	cno        FIXED(4) PRIMARY KEY,
+ 	title      CHAR(7),
+ 	firstname  CHAR(20),
+ 	name       CHAR(40) NOT NULL,
+	 zip        CHAR(5),
+	 address    CHAR(40) NOT NULL,
+	 CONSTRAINT cno_cons CHECK (cno > 0),
+	 CONSTRAINT zip_cons CHECK
+	                  (SUBSTR(zip,1,1) BETWEEN '0' AND '9' AND
+	                  SUBSTR(zip,2,1) BETWEEN '0' AND '9' AND
+	                  SUBSTR(zip,3,1) BETWEEN '0' AND '9' AND
+	                  SUBSTR(zip,4,1) BETWEEN '0' AND '9' AND
+	                  SUBSTR(zip,5,1) BETWEEN '0' AND '9'),
+	CONSTRAINT title_cons CHECK (title IN ('Mr', 'Mrs', 'Company') ),
 
- zip                CHAR(5),
+	CONSTRAINT customer_zip_in_city FOREIGN KEY(zip) REFERENCES city(zip) ON DELETE RESTRICT
+	);
 
- address            CHAR(40)    NOT NULL);
+-- CREATE TABLE hotel
+
+-- (hno                FIXED(4)    PRIMARY KEY,
+
+--  name               CHAR(50)    NOT NULL,
+
+--  zip                CHAR(5),
+
+--  address            CHAR(40)    NOT NULL);
 
 CREATE TABLE hotel
+(hno     FIXED(4) PRIMARY KEY,
+ name    CHAR(50) NOT NULL,
+ zip     CHAR(5) ,
+ address CHAR(40) NOT NULL,
+ info    LONG,
+ CONSTRAINT hno_cons CHECK (hno > 0),
+ CONSTRAINT zip_cons CHECK
+                  (SUBSTR(zip,1,1) BETWEEN '0' AND '9' AND
+                  SUBSTR(zip,2,1) BETWEEN '0' AND '9' AND
+                  SUBSTR(zip,3,1) BETWEEN '0' AND '9' AND
+                  SUBSTR(zip,4,1) BETWEEN '0' AND '9' AND
+                  SUBSTR(zip,5,1) BETWEEN '0' AND '9'),
+ CONSTRAINT hotel_zip_in_city FOREIGN KEY(zip) REFERENCES city(zip) ON DELETE RESTRICT);
 
-(hno                FIXED(4)    PRIMARY KEY,
 
- name               CHAR(50)    NOT NULL,
 
- zip                CHAR(5),
+-- CREATE TABLE room
+-- (hno                FIXED(4),
 
- address            CHAR(40)    NOT NULL);
+--  type               CHAR(6),    PRIMARY KEY (hno,type),
+
+--  free               FIXED(3,0),
+
+--  price              FIXED(6,2));
 
 
 CREATE TABLE room
-(hno                FIXED(4),
+(hno       FIXED(4),
+ type      CHAR(6),
+ free      FIXED(3,0),
+ price     FIXED(6,2),
+ CONSTRAINT hno_cons CHECK (hno > 0),
+ CONSTRAINT price_cons CHECK (price BETWEEN 0.00 AND 5000.00),
+ PRIMARY KEY (hno,type),
+ CONSTRAINT free_cons CHECK (free >= 0),
+ CONSTRAINT type_cons CHECK ( type IN ('single','double','suite') ),
+ CONSTRAINT room_hno_in_hotel FOREIGN KEY  (hno) REFERENCES hotel(hno) ON DELETE CASCADE );
 
- type               CHAR(6),    PRIMARY KEY (hno,type),
 
- free               FIXED(3,0),
+-- CREATE TABLE reservation
 
- price              FIXED(6,2));
+-- (rno                FIXED(4)    PRIMARY KEY,
 
+--  cno                FIXED(4),
+
+--  hno                FIXED(4),
+
+--  type               CHAR(6),
+
+--  arrival            DATE        NOT NULL,
+
+--  departure          DATE        NOT NULL);
 
 CREATE TABLE reservation
+(rno       FIXED(4) PRIMARY KEY,
+ cno       FIXED(4) ,
+ hno       FIXED(4) ,
+ type      CHAR(6)  ,
+ arrival   DATE     NOT NULL,
+ departure DATE     NOT NULL,
+ CONSTRAINT staying CHECK (departure > arrival),
+ CONSTRAINT rno_cons CHECK (rno > 0),
+ CONSTRAINT cno_cons CHECK (cno > 0),
+ CONSTRAINT hno_cons CHECK (hno > 0),
+ CONSTRAINT type_cons CHECK ( type IN ('single','double','suite')),
+ CONSTRAINT reservation_cno_in_customer FOREIGN KEY (cno) REFERENCES customer(cno) ON DELETE CASCADE,
+ CONSTRAINT reservation_info_in_room FOREIGN KEY (hno,type) REFERENCES room(hno,type) ON DELETE CASCADE
+ );
 
-(rno                FIXED(4)    PRIMARY KEY,
 
- cno                FIXED(4),
 
- hno                FIXED(4),
+-- CREATE TABLE employee
+-- (hno         FIXED(4),
+--  eno         FIXED(4),
+--  PRIMARY KEY (hno,eno),
+--  title       CHAR(7) ,
+--  firstname   CHAR(20),
+--  name        CHAR(20) NOT NULL,
+--  manager_eno FIXED(4)
+--  );
 
- type               CHAR(6),
-
- arrival            DATE        NOT NULL,
-
- departure          DATE        NOT NULL);
-
+CREATE TABLE employee
+(hno         FIXED(4),
+ eno         FIXED(4),
+ title       CHAR(7) ,
+ firstname   CHAR(20),
+ name        CHAR(20) NOT NULL,
+ manager_eno FIXED(4),
+ PRIMARY KEY (hno,eno),
+ CONSTRAINT title_cons CHECK(title IN ('Mr','Mrs')),
+ CONSTRAINT employee_hno_in_hotel FOREIGN KEY(hno) REFERENCES hotel(hno) ON DELETE CASCADE
+ );
 
 INSERT INTO city VALUES ('12203','Albany','NY');
 
@@ -111,7 +210,7 @@ INSERT INTO city VALUES ('20005','Seattle','WA');
 
 INSERT INTO city VALUES ('20019','Seattle','WA');
 
--- customer tables  15
+-- -- customer tables  15
 
 INSERT INTO customer VALUES (3000,'Mrs','Jenny','Porter','10580','1340 N. Ash Street, #3');
 
@@ -144,41 +243,53 @@ INSERT INTO customer VALUES (4300,'Company',NULL,'TOOLware','20019','410 Maripos
 INSERT INTO customer VALUES (4400,'Mr','Antony','Jenkins','20903','55 A Parkway, #15');
 
 
--- TABLE hotel (15 rows)
+-- -- TABLE hotel (15 rows)
 
 
 
-INSERT INTO hotel VALUES (10,'Congress','20005','155 Beechwood St.');
+INSERT INTO hotel VALUES (10,'Congress','20005','155 Beechwood St.','gdfgd');
 
-INSERT INTO hotel VALUES (30,'Regency','20037','477 17th Avenue');
+INSERT INTO hotel VALUES (30,'Regency','20037','477 17th Avenue','fsdfasf');
 
-INSERT INTO hotel VALUES (20,'Long Island','11788','1499 Grove Street');
+INSERT INTO hotel VALUES (20,'Long Island','11788','1499 Grove Street','fadafa');
 
-INSERT INTO hotel VALUES (70,'Empire State','12203','65 Yellowstone Dr.');
+INSERT INTO hotel VALUES (70,'Empire State','12203','65 Yellowstone Dr.','afaafsfer');
 
-INSERT INTO hotel VALUES (80,'Midtown','10019','12 Barnard St.');
+INSERT INTO hotel VALUES (80,'Midtown','10019','12 Barnard St.','areraera');
 
-INSERT INTO hotel VALUES (40,'Eighth Avenue','10019','112 8th Avenue');
+INSERT INTO hotel VALUES (40,'Eighth Avenue','10019','112 8th Avenue','araera');
 
-INSERT INTO hotel VALUES (50,'Lake Michigan','60601','354 OAK Terrace');
+INSERT INTO hotel VALUES (50,'Lake Michigan','60601','354 OAK Terrace','aerae');
 
-INSERT INTO hotel VALUES (60,'Airport','60018','650 C Parkway');
+INSERT INTO hotel VALUES (60,'Airport','60018','650 C Parkway','arareraew');
 
-INSERT INTO hotel VALUES (90,'Sunshine','33575','200 Yellowstone Dr.');
+INSERT INTO hotel VALUES (90,'Sunshine','33575','200 Yellowstone Dr.','earearweraw');
 
-INSERT INTO hotel VALUES (100,'Beach','32018','1980 34th St.');
+INSERT INTO hotel VALUES (100,'Beach','32018','1980 34th St.','arewarwre');
 
-INSERT INTO hotel VALUES (110,'Atlantic','33441','111 78th St.');
+INSERT INTO hotel VALUES (110,'Atlantic','33441','111 78th St.','warewaerwa');
 
-INSERT INTO hotel VALUES (120,'Long Beach','90804','35 Broadway');
+INSERT INTO hotel VALUES (120,'Long Beach','90804','35 Broadway','waerrawrwerrgf');
 
-INSERT INTO hotel VALUES (150,'Indian Horse','92262','16 MAIN STREET');
+INSERT INTO hotel VALUES (150,'Indian Horse','92262','16 MAIN STREET','earerwerwaq');
 
-INSERT INTO hotel VALUES (130,'Star','90029','13 Beechwood Place');
+INSERT INTO hotel VALUES (130,'Star','90029','13 Beechwood Place','rwaerwaer');
 
-INSERT INTO hotel VALUES (140,'River Boat','70112','788 MAIN STREET');
+INSERT INTO hotel VALUES (140,'River Boat','70112','788 MAIN STREET','gffgsgrr');
 
--- TABLE room (38 rows)
+-- table employee
+INSERT INTO employee VALUES(10,10,'Mr','naveen','naveen',10);
+INSERT INTO employee VALUES(20,20,'Mrs','ashraf','ashraf',20);
+INSERT INTO employee VALUES(30,30,'Mr','prakash','prakash',30);
+INSERT INTO employee VALUES(40,40,'Mrs','aurangzeb','aurangzeb',40);
+INSERT INTO employee VALUES(50,50,'Mrs','vivek','vivek',50);
+INSERT INTO employee VALUES(60,60,'Mrs','piyush','piyush',60);
+INSERT INTO employee VALUES(70,70,'Mr','abhishek','abhishek',70);
+INSERT INTO employee VALUES(80,80,'Mr','sanket','sanket',80);
+INSERT INTO employee VALUES(90,90,'Mrs','puneet','puneet',90);
+INSERT INTO employee VALUES(100,100,'Mr','mayank','mayank',100);
+
+-- -- TABLE room (38 rows)
 
 INSERT INTO room VALUES (10,'single' ,200,135.00);
 
@@ -257,7 +368,7 @@ INSERT INTO room VALUES (140,'double',9,200.00);
 INSERT INTO room VALUES (140,'suite',78,600.00);
 
 
--- TABLE reservation (10 rows)
+-- -- TABLE reservation (10 rows)
 
 
 INSERT INTO reservation VALUES (100,3000,80,'single','2004-11-13','2004-11-15');
@@ -287,3 +398,31 @@ select * from customer;
 select * from hotel;
 select * from room;
 select * from reservation;
+select * from employee;
+
+
+
+
+CREATE VIEW customer_addr (cno, title, name, zip, city, state, address)
+AS SELECT customer.cno, customer.title, customer.name, customer.zip,city.name, city.state, customer.address
+          FROM customer, city
+          WHERE customer.zip = city.zip WITH CHECK OPTION;
+
+
+CREATE VIEW hotel_addr (hno, name, zip, city, state, address)
+AS SELECT hotel.hno, hotel.name, hotel.zip,
+          city.name, city.state, hotel.address
+          FROM hotel, city
+          WHERE hotel.zip = city.zip WITH CHECK OPTION;
+
+CREATE VIEW custom_hotel (customname, customcity, hotelname, hotelcity)
+AS SELECT customer_addr.name, customer_addr.city,
+          hotel_addr.name, hotel_addr.city
+          FROM customer_addr, hotel_addr, reservation
+          WHERE customer_addr.cno = reservation.cno
+          AND hotel_addr.hno = reservation.hno;
+
+CREATE INDEX city_state ON city (state);
+
+CREATE INDEX full_name_index ON customer (title, firstname);
+

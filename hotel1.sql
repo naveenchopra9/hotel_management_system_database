@@ -1,6 +1,4 @@
 
--- https://help.sap.com/saphelp_maxdb76/helpdata/en/eb/327440ba6e701de10000000a1550b0/content.htm?no_cache=true
-
 drop database hotel;
 create database hotel;
 use hotel;
